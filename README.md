@@ -1,62 +1,123 @@
 # OCR Plat Nomor Kendaraan menggunakan Visual Language Model (LM Studio)
 
-## Deskripsi
-
-Program ini melakukan Optical Character Recognition (OCR) pada plat nomor
-kendaraan Indonesia menggunakan Visual Language Model (VLM), yang dijalankan
-secara lokal melalui **LM Studio** dan diintegrasikan dengan Python.
+Program OCR plat nomor kendaraan Indonesia menggunakan Visual Language Model
+(VLM) yang dijalankan lokal via **LM Studio**, diintegrasikan dengan Python.
 
 - **Model**: SmolVLM2-2.2B-Instruct (via LM Studio Local Server)
 - **Dataset**: Indonesian License Plate Dataset (folder `test`, format YOLO)
 - **Metrik evaluasi**: Character Error Rate (CER)
 
-## Dataset
+---
 
-Dataset mengikuti struktur YOLO:
+## Instruksi Eksekusi
 
-```
-images/test/xxx.jpg          -> gambar kendaraan
-labelswithLP/test/xxx.txt    -> class x_center y_center width height PLATE_TEXT
-```
+### 1. Persiapan Dataset
 
-Setiap baris di `labelswithLP` merepresentasikan satu plat (bounding box +
-teks plat asli sebagai ground truth). Satu gambar bisa memiliki lebih dari
-satu plat.
-
-## Metode
-
-1. Untuk setiap plat pada `labelswithLP/test/`, gambar di-**crop** sesuai
-   bounding box-nya.
-2. Crop plat dikirim ke LM Studio (format OpenAI-compatible API) dengan
-   prompt:
-   > "This is a cropped image of an Indonesian vehicle license plate...
-   > Respond with ONLY the main plate number."
-3. Hasil prediksi dibersihkan dengan regex untuk memisahkan nomor plat
-   utama dari teks tambahan (tanggal masa berlaku) yang kadang ikut terbaca.
-4. Prediksi dibandingkan dengan ground truth menggunakan **CER**:
+1. Download dataset dari Kaggle:
+   https://www.kaggle.com/datasets/juanthomaswijaya/indonesian-license-plate-dataset
+2. Ekstrak file zip-nya. Letakkan folder hasil ekstrak sejajar dengan
+   `ocrv2.py`, sehingga strukturnya seperti ini:
 
 ```
-CER = (S + D + I) / N
+plate_ocr/
+├── Indonesian License Plate Dataset/
+│   ├── images/test/xxx.jpg
+│   ├── labels/test/xxx.txt
+│   └── labelswithLP/test/xxx.txt   <- dipakai sebagai ground truth
+├── ocrv2.py
+├── requirements.txt
+└── README.md
 ```
-S = substitusi, D = penghapusan, I = penyisipan, N = jumlah karakter ground truth.
-Dihitung dengan algoritma edit distance (Levenshtein) + traceback.
 
-5. Hasil disimpan ke `hasil_ocr_plat.csv` dengan kolom:
-   `image, ground_truth, prediction, CER_score`
+3. Jika lokasi folder dataset berbeda, ubah variabel `DATASET_ROOT` di
+   bagian atas `ocrv2.py`:
 
-## Cara Menjalankan
+```python
+DATASET_ROOT = "./Indonesian License Plate Dataset"
+```
+
+### 2. Jalankan LM Studio
+
+1. Buka aplikasi **LM Studio**.
+2. Download & load model **SmolVLM2-2.2B-Instruct** (atau model VLM lain
+   yang kompatibel, lihat catatan di bawah).
+3. Buka tab **Local Server** (ikon `<->`), pilih model tersebut, klik
+   **Start Server**.
+4. Pastikan server aktif di `http://127.0.0.1:1234`. Jika port berbeda,
+   sesuaikan `LMSTUDIO_URL` di `ocrv2.py`:
+
+```python
+LMSTUDIO_URL = "http://127.0.0.1:1234/v1/chat/completions"
+```
+
+5. Cek nama model yang muncul persis di LM Studio, lalu sesuaikan
+   `MODEL_NAME` di `ocrv2.py` jika perlu.
+
+### 3. Setup Environment Python
 
 ```bash
-# 1. Jalankan LM Studio, load model SmolVLM2-2.2B-Instruct, start Local Server
-# 2. Install dependency
-pip install -r requirements.txt
+python3 -m venv venv
+source venv/bin/activate      # Linux/Mac
+# venv\Scripts\activate       # Windows
 
-# 3. Jalankan program
-python ocr_plate_lmstudio.py
+pip install -r requirements.txt
 ```
 
-Sesuaikan `DATASET_ROOT` di dalam script dengan lokasi folder dataset di
-komputer masing-masing.
+### 4. Jalankan Program
+
+Pastikan LM Studio Local Server sudah menyala, lalu:
+
+```bash
+python ocrv2.py
+```
+
+Program akan berjalan otomatis:
+1. Membaca seluruh file label di `labelswithLP/test/`.
+2. Meng-crop tiap plat dari gambar sesuai bounding box.
+3. Mengirim tiap crop plat ke LM Studio untuk dibaca.
+4. Menghitung CER dari hasil prediksi vs ground truth.
+5. Menyimpan hasil ke `hasil_ocr_platv1.csv`.
+6. Menampilkan rata-rata CER di terminal saat selesai.
+
+Contoh output di terminal:
+
+```
+[1/100] test001: 3 plat terdeteksi
+    [test001_0] GT: 'B9140BCD' | Pred: 'B9140BCD' | CER: 0.0
+...
+[SELESAI] Total plat diproses: 197
+[HASIL] Disimpan di hasil_ocr_platv1.csv
+[RATA-RATA CER] 0.1082
+```
+
+### 5. Melihat Hasil
+
+Buka `hasil_ocr_platv1.csv`, berisi kolom:
+
+```
+image, ground_truth, prediction, CER_score
+```
+
+---
+
+## Troubleshooting
+
+| Masalah | Solusi |
+|---|---|
+| `Connection refused` saat request ke LM Studio | Pastikan Local Server LM Studio sudah di-**Start**, cek port di `LMSTUDIO_URL` |
+| `FileNotFoundError` folder dataset | Cek path `DATASET_ROOT` sesuai lokasi folder dataset hasil ekstrak |
+| Prediksi kosong / error terus-menerus | Cek nama model di `MODEL_NAME` sudah sesuai dengan yang di-load di LM Studio |
+| CER tinggi / prediksi ikut baca tanggal masa berlaku plat | Sudah dimitigasi lewat prompt & regex di `clean_prediction()`, lihat komentar di kode |
+
+## Struktur File
+
+```
+plate_ocr/
+├── ocrv2.py
+├── requirements.txt
+├── hasil_ocr_platv1.csv
+└── README.md
+```
 
 ## Hasil Eksperimen
 
@@ -91,56 +152,6 @@ Contoh baris hasil:
   keliru pada kondisi pencahayaan/blur tertentu.
 - Regex ekstraksi plat mengasumsikan format umum plat Indonesia dan belum
   menutupi seluruh variasi format daerah.
-
-## Diskusi: Problem Menarik yang Ditemukan
-
-Beberapa temuan selama eksperimen yang layak didiskusikan lebih dalam:
-
-1. **VLM ikut "membaca" informasi yang tidak diminta.**
-   Plat Indonesia mencetak dua jenis teks berdekatan: nomor plat (besar) dan
-   tanggal masa berlaku (kecil, di bawah). Dengan prompt naif, model
-   menganggap keduanya sebagai satu string yang harus dibaca semua, karena
-   secara visual keduanya sama-sama "teks di gambar". Ini menunjukkan bahwa
-   VLM general-purpose tidak otomatis memahami *struktur semantik* objek
-   seperti plat nomor — ia butuh instruksi eksplisit tentang bagian mana
-   yang relevan. Ini beda dengan OCR tradisional (mis. Tesseract) yang
-   memang cuma menangkap teks tanpa menyeleksi maknanya, tapi juga tidak
-   bisa membedakan "field mana yang penting" tanpa post-processing manual —
-   jadi masalah ini sebenarnya berpindah tempat (dari image-processing ke
-   prompt-engineering), bukan hilang.
-
-2. **Prompt engineering memberi dampak lebih besar daripada dugaan awal.**
-   Rata-rata CER turun ~79% (dari 0.51 ke 0.11) hanya dengan memperjelas
-   instruksi prompt dan menambah post-processing regex, tanpa mengganti
-   model maupun mengubah cara crop gambar. Ini menarik karena menunjukkan
-   pada model VLM ukuran kecil, kualitas output kadang lebih ditentukan
-   oleh cara "bertanya" daripada kapabilitas model itu sendiri.
-
-3. **Regex post-processing punya trade-off.**
-   Regex yang dipakai untuk memotong teks tambahan (tanggal validasi)
-   berasumsi format plat "huruf-angka-huruf". Ini efektif untuk mayoritas
-   kasus, tapi gagal pada plat dengan akhiran huruf+angka (mis. `V0`, `W0`)
-   yang dipakai di beberapa daerah — regex yang terlalu ketat malah
-   memotong bagian yang seharusnya jadi jawaban benar. Ini contoh nyata
-   trade-off klasik di NLP/pattern-matching: aturan yang terlalu spesifik
-   berisiko overfit ke pola mayoritas dan gagal pada kasus minoritas.
-
-4. **Kesalahan karakter mengikuti pola visual, bukan acak.**
-   Kesalahan yang tersisa hampir selalu antara karakter yang mirip secara
-   bentuk (`B`↔`8`, `O`↔`0`/`Q`, `G`↔`C`), bukan kesalahan acak. Ini
-   konsisten dengan cara kerja VLM yang "melihat" bentuk visual, mirip
-   pola kesalahan OCR klasik — indikasi bahwa error di sini lebih banyak
-   disebabkan resolusi/kualitas crop gambar plat, bukan kegagalan
-   pemahaman bahasa model.
-
-5. **Crop per-bounding-box vs OCR gambar utuh.**
-   Karena satu gambar bisa memiliki lebih dari satu plat, pendekatan
-   meng-crop tiap bounding box sebelum OCR terbukti penting: mengirim
-   gambar utuh ke model akan membuatnya bingung menentukan plat mana yang
-   dimaksud, terutama saat ada 2 kendaraan dalam satu frame. Ini
-   menunjukkan bahwa integrasi deteksi objek (bounding box) dengan VLM
-   text-reading adalah pola yang lebih andal dibanding mengandalkan VLM
-   untuk sekaligus mendeteksi dan membaca teks dari gambar kompleks.
 
 ## Kesimpulan
 
