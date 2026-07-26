@@ -1,187 +1,213 @@
-# note: comvisaasrecog.py merupakan code untuk dataset indonesian license plate recognition
-# comvisaasv2.py merupakan code untuk dataset indonesian licente plate dataset
-# OCR Plat Nomor Kendaraan menggunakan Visual Language Model (LM Studio)
+# OCR Plat Nomor Kendaraan Menggunakan Visual Language Model (LM Studio)
 
-Program OCR plat nomor kendaraan Indonesia menggunakan Visual Language Model
-(VLM) yang dijalankan lokal via **LM Studio**, diintegrasikan dengan Python.
+Program ini digunakan untuk melakukan OCR (Optical Character Recognition) pada plat nomor kendaraan Indonesia menggunakan Visual Language Model (VLM) yang dijalankan secara lokal melalui **LM Studio**.
 
-- **Model**: SmolVLM2-2.2B-Instruct (via LM Studio Local Server)
-- **Dataset**: Indonesian License Plate Dataset (folder `test`, format YOLO)
-- **Metrik evaluasi**: Character Error Rate (CER)
+> **Catatan**
+>
+> - `comvisaasrecog.py` digunakan untuk dataset **Indonesian License Plate Recognition**.
+> - `comvisaasv2.py` digunakan untuk dataset **Indonesian License Plate Dataset**.
+
+## Model
+
+- Qwen2-VL-2B-Instruct (melalui LM Studio Local Server)
+
+## Dataset
+
+- Indonesian License Plate Recognition
+- Format YOLO (bounding box per karakter)
+
+## Metrik Evaluasi
+
+- Character Error Rate (CER)
+- Exact Match Accuracy
 
 ---
 
-## Instruksi Eksekusi
+# Instruksi Eksekusi
 
-### 1. Persiapan Dataset
+## 1. Persiapan Dataset
 
-1. Download dataset dari Kaggle:
-   https://www.kaggle.com/datasets/juanthomaswijaya/indonesian-license-plate-dataset
-2. Ekstrak file zip-nya. Letakkan folder hasil ekstrak sejajar dengan
-   `ocrv2.py`, sehingga strukturnya seperti ini:
+Download dataset **Indonesian License Plate Recognition**, kemudian letakkan dengan struktur folder berikut:
 
 ```
-plate_ocr/
-├── Indonesian License Plate Dataset/
-│   ├── images/test/xxx.jpg
-│   ├── labels/test/xxx.txt
-│   └── labelswithLP/test/xxx.txt   <- dipakai sebagai ground truth
-├── ocrv2.py
+project/
+├── Indonesian License Plate Recognition Dataset/
+│   ├── images/
+│   │   └── test/
+│   ├── labels/
+│   │   └── test/
+│   └── classes.names
+├── comvisaasrecog.py
+├── comvisaasv2.py
 ├── requirements.txt
 └── README.md
 ```
 
-3. Jika lokasi folder dataset berbeda, ubah variabel `DATASET_ROOT` di
-   bagian atas `ocrv2.py`:
+Apabila lokasi dataset berbeda, ubah variabel berikut pada program:
 
 ```python
-DATASET_ROOT = "./Indonesian License Plate Dataset"
+DATASET_ROOT = "./Indonesian License Plate Recognition Dataset"
 ```
 
-### 2. Jalankan LM Studio
+---
 
-1. Buka aplikasi **LM Studio**.
-2. Download & load model **SmolVLM2-2.2B-Instruct** (atau model VLM lain
-   yang kompatibel, lihat catatan di bawah).
-3. Buka tab **Local Server** (ikon `<->`), pilih model tersebut, klik
-   **Start Server**.
-4. Pastikan server aktif di `http://127.0.0.1:1234`. Jika port berbeda,
-   sesuaikan `LMSTUDIO_URL` di `ocrv2.py`:
+## 2. Jalankan LM Studio
+
+1. Buka LM Studio.
+2. Download dan load model **Qwen2-VL-2B-Instruct**.
+3. Masuk ke menu **Local Server**.
+4. Jalankan server.
+5. Pastikan server aktif pada:
+
+```
+http://127.0.0.1:1234
+```
+
+Apabila menggunakan port lain, ubah konfigurasi berikut:
 
 ```python
 LMSTUDIO_URL = "http://127.0.0.1:1234/v1/chat/completions"
 ```
 
-5. Cek nama model yang muncul persis di LM Studio, lalu sesuaikan
-   `MODEL_NAME` di `ocrv2.py` jika perlu.
+Pastikan nama model sesuai dengan konfigurasi:
 
-### 3. Setup Environment Python
-
-```bash
-python3 -m venv venv
-source venv/bin/activate      # Linux/Mac
-# venv\Scripts\activate       # Windows
-
-pip install -r requirements.txt
-```
-
-### 4. Jalankan Program
-
-Pastikan LM Studio Local Server sudah menyala, lalu:
-
-```bash
-python ocrv2.py
-```
-
-Program akan berjalan otomatis:
-1. Membaca seluruh file label di `labelswithLP/test/`.
-2. Meng-crop tiap plat dari gambar sesuai bounding box.
-3. Mengirim tiap crop plat ke LM Studio untuk dibaca.
-4. Menghitung CER dari hasil prediksi vs ground truth.
-5. Menyimpan hasil ke `hasil_ocr_platv1.csv`.
-6. Menampilkan rata-rata CER di terminal saat selesai.
-
-Contoh output di terminal:
-
-```
-[1/100] test001: 3 plat terdeteksi
-    [test001_0] GT: 'B9140BCD' | Pred: 'B9140BCD' | CER: 0.0
-...
-[SELESAI] Total plat diproses: 197
-[HASIL] Disimpan di hasil_ocr_platv1.csv
-[RATA-RATA CER] 0.1082
-```
-
-### 5. Melihat Hasil
-
-Buka `hasil_ocr_platv1.csv`, berisi kolom:
-
-```
-image, ground_truth, prediction, CER_score
+```python
+MODEL_NAME = "qwen2-vl-2b-instruct"
 ```
 
 ---
 
-## Troubleshooting
+## 3. Install Dependensi
+
+```bash
+pip install pillow requests
+```
+
+atau
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## 4. Menjalankan Program
+
+Untuk dataset **Indonesian License Plate Recognition**:
+
+```bash
+python comvisaasrecog.py
+```
+
+Untuk dataset **Indonesian License Plate Dataset**:
+
+```bash
+python comvisaasv2.py
+```
+
+Program akan secara otomatis:
+
+1. Membaca seluruh gambar dan label YOLO.
+2. Membentuk ground truth dari file label.
+3. Mengirim gambar ke LM Studio.
+4. Mengekstrak hasil OCR plat nomor.
+5. Menghitung Character Error Rate (CER).
+6. Menghitung Exact Match Accuracy.
+7. Menyimpan hasil evaluasi ke file CSV.
+8. Menyimpan ringkasan hasil evaluasi.
+9. Menyimpan gambar yang dikirim ke model pada folder `debug_crops`.
+
+---
+
+# Output
+
+Program menghasilkan beberapa file berikut.
+
+```
+recogcomvis.csv
+```
+
+Berisi hasil prediksi setiap gambar.
+
+Kolom:
+
+```
+image
+ground_truth
+prediction
+raw_output
+CER_score
+```
+
+Selain itu akan dihasilkan:
+
+```
+recogcomvis_summary.txt
+```
+
+yang berisi:
+
+- Total data yang diproses
+- Rata-rata CER
+- Exact Match Accuracy
+- Model yang digunakan
+- Dataset split
+
+Folder berikut juga akan dibuat:
+
+```
+debug_crops/
+```
+
+yang berisi gambar yang dikirim ke model untuk proses debugging.
+
+---
+
+# Konfigurasi
+
+Beberapa parameter yang dapat diubah pada bagian awal program:
+
+| Variabel | Keterangan |
+|----------|------------|
+| `LMSTUDIO_URL` | Alamat API LM Studio |
+| `MODEL_NAME` | Nama model yang digunakan |
+| `DATASET_ROOT` | Lokasi dataset |
+| `SPLIT` | Dataset split (`test`) |
+| `USE_ORIGINAL_IMAGE` | Menggunakan gambar asli atau hasil crop |
+| `ENABLE_ENHANCE` | Mengaktifkan image enhancement |
+| `CROP_PADDING_RATIO` | Padding saat crop |
+| `MAX_IMAGE_SIZE` | Resolusi maksimum gambar |
+| `JPEG_QUALITY` | Kualitas kompresi JPEG |
+
+---
+
+# Troubleshooting
 
 | Masalah | Solusi |
-|---|---|
-| `Connection refused` saat request ke LM Studio | Pastikan Local Server LM Studio sudah di-**Start**, cek port di `LMSTUDIO_URL` |
-| `FileNotFoundError` folder dataset | Cek path `DATASET_ROOT` sesuai lokasi folder dataset hasil ekstrak |
-| Prediksi kosong / error terus-menerus | Cek nama model di `MODEL_NAME` sudah sesuai dengan yang di-load di LM Studio |
-| CER tinggi / prediksi ikut baca tanggal masa berlaku plat | Sudah dimitigasi lewat prompt & regex di `clean_prediction()`, lihat komentar di kode |
+|---------|--------|
+| Tidak dapat terhubung ke LM Studio | Pastikan Local Server telah dijalankan dan URL sesuai. |
+| Model tidak ditemukan | Pastikan nama model sama dengan yang dimuat di LM Studio. |
+| Dataset tidak ditemukan | Periksa kembali lokasi `DATASET_ROOT`. |
+| File `classes.names` tidak ditemukan | Pastikan file tersedia pada folder dataset. |
+| Hasil OCR kosong | Pastikan gambar jelas dan model berhasil dimuat. |
 
-## Struktur File
+---
+
+# Struktur File
 
 ```
-plate_ocr/
-├── ocrv2.py
+project/
+├── comvisaasrecog.py
+├── comvisaasv2.py
 ├── requirements.txt
-├── hasil_ocr_platv1.csv
-└── README.md
+├── README.md
+├── recogcomvis.csv
+├── recogcomvis_summary.txt
+└── debug_crops/
 ```
 
-## Hasil Eksperimen
+---
 
-Diuji pada 100 gambar / 197 plat dari folder `test`:
+# Kesimpulan
 
-| Metrik | Nilai |
-|---|---|
-| Rata-rata CER | **0.1082** |
-| Prediksi sempurna (CER = 0) | 133 / 197 (67.5%) |
-| CER ≤ 0.2 | 164 / 197 (83.2%) |
-
-Contoh baris hasil:
-
-| image | ground_truth | prediction | CER_score |
-|---|---|---|---|
-| test008_0 | DK1157AAB | DK1157AAB | 0.0 |
-| test008_1 | AA1997FE | AA1997EE | 0.125 |
-
-## Analisis
-
-- Prompt awal yang polos ("Respond only with the plate number") membuat
-  model ikut membaca tanggal masa berlaku plat, sehingga rata-rata CER
-  awalnya **~0.51**. Setelah prompt diperjelas dan ditambah post-processing
-  regex, CER turun menjadi **~0.11** (turun ±79%).
-- Kesalahan yang tersisa umumnya berupa kekeliruan karakter mirip
-  (`B`↔`8`, `O`↔`0`/`Q`, `G`↔`C`), wajar untuk model VLM kecil (2.2B) yang
-  bersifat general-purpose, bukan model OCR khusus plat nomor.
-
-## Keterbatasan
-
-- Model bukan model OCR khusus, sehingga akurasi karakter individual bisa
-  keliru pada kondisi pencahayaan/blur tertentu.
-- Regex ekstraksi plat mengasumsikan format umum plat Indonesia dan belum
-  menutupi seluruh variasi format daerah.
-
-## Kesimpulan
-
-Program berhasil mengintegrasikan Visual Language Model (SmolVLM2-2.2B-Instruct)
-yang dijalankan via LM Studio dengan Python untuk melakukan OCR plat nomor
-kendaraan, lengkap dengan evaluasi kuantitatif menggunakan CER sesuai rumus
-yang ditentukan.
-
-Hasil akhir menunjukkan rata-rata CER **0.1082**, dengan **67.5%** prediksi
-yang cocok sempurna dengan ground truth pada 197 plat yang diuji. Pipeline
-crop-per-bounding-box + prompt yang eksplisit + post-processing regex
-terbukti efektif menurunkan CER hingga ±79% dibanding pendekatan naif.
-
-Meski demikian, hasil ini juga menunjukkan keterbatasan model VLM kecil
-(2.2B parameter) untuk tugas OCR presisi tinggi: kesalahan yang tersisa
-didominasi oleh kekeliruan karakter visual mirip dan variasi format plat
-daerah yang belum sepenuhnya tertangani oleh aturan regex yang digunakan.
-Secara keseluruhan, eksperimen ini menegaskan bahwa performa VLM untuk
-tugas berformat ketat seperti OCR sangat bergantung pada kombinasi
-prompt engineering dan post-processing, bukan hanya pada kapabilitas model
-mentahnya.
-
-## Struktur File
-
-```
-plate_ocr/
-├── ocrv2.py
-├── requirements.txt
-├── hasil_ocr_platv1.csv
-└── README.md
-```
+Program ini mengimplementasikan OCR plat nomor kendaraan Indonesia menggunakan model **Qwen2-VL-2B-Instruct** yang dijalankan melalui **LM Studio**. Sistem melakukan pembacaan dataset berformat YOLO, mengekstrak teks plat nomor menggunakan Visual Language Model, kemudian mengevaluasi hasil prediksi menggunakan **Character Error Rate (CER)** dan **Exact Match Accuracy**. Seluruh hasil prediksi, ringkasan evaluasi, dan gambar debugging disimpan secara otomatis sehingga memudahkan proses analisis performa model.
