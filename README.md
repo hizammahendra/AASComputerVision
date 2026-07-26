@@ -1,3 +1,5 @@
+# NOTE COMVISAASRECOG.PY MERUPAKAN CODE UNTUK DATASET INDONESIAN LICENSE PLATE RECOGNITION
+# COMVISAASV2.PY MERUPAKAN CODE UNTUK DATASET INDONESIAN LICENTE PLATE DATASET
 # OCR Plat Nomor Kendaraan menggunakan Visual Language Model (LM Studio)
 
 Program OCR plat nomor kendaraan Indonesia menggunakan Visual Language Model
