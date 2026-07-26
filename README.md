@@ -1,3 +1,6 @@
+# note: comvisaasrecog.py merupakan code untuk dataset indonesian license plate recognition
+# comvisaasv2.py merupakan code untuk dataset indonesian licente plate dataset
+
 # OCR Plat Nomor Kendaraan Menggunakan Visual Language Model (LM Studio)
 
 Program ini digunakan untuk melakukan OCR (Optical Character Recognition) pada plat nomor kendaraan Indonesia menggunakan Visual Language Model (VLM) yang dijalankan secara lokal melalui **LM Studio**.
