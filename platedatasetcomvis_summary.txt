@@ -1,0 +1,5 @@
+Total plat diproses : 197
+Rata-rata CER       : 0.0971
+Exact match         : 137/197
+Accuracy (exact)    : 0.6954
+Model               : qwen2-vl-2b-instruct
